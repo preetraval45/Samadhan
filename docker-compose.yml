@@ -1,0 +1,150 @@
+version: '3.8'
+
+services:
+  # Nginx Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    container_name: samadhan-nginx
+    ports:
+      - "400:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - samadhan-network
+    restart: unless-stopped
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: samadhan-backend
+    expose:
+      - "8000"
+    environment:
+      - ENVIRONMENT=development
+      - DATABASE_URL=postgresql://samadhan:samadhan123@postgres:5432/samadhan
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=samadhan123
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+    volumes:
+      - ./backend:/app
+      - backend-data:/app/data
+    depends_on:
+      - postgres
+      - redis
+      - qdrant
+      - neo4j
+    networks:
+      - samadhan-network
+
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: samadhan-frontend
+    expose:
+      - "3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:400/api
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - samadhan-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: samadhan-postgres
+    environment:
+      - POSTGRES_USER=samadhan
+      - POSTGRES_PASSWORD=samadhan123
+      - POSTGRES_DB=samadhan
+    expose:
+      - "5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - samadhan-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: samadhan-redis
+    expose:
+      - "6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - samadhan-network
+
+  # Qdrant Vector Database
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: samadhan-qdrant
+    expose:
+      - "6333"
+      - "6334"
+    volumes:
+      - qdrant-data:/qdrant/storage
+    networks:
+      - samadhan-network
+
+  # MLflow Server
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.10.2
+    container_name: samadhan-mlflow
+    expose:
+      - "5000"
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=sqlite:///mlflow/mlflow.db
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
+    volumes:
+      - mlflow-data:/mlflow
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow/mlflow.db --default-artifact-root /mlflow/artifacts
+    networks:
+      - samadhan-network
+
+  # Neo4j Knowledge Graph
+  neo4j:
+    image: neo4j:5.16-community
+    container_name: samadhan-neo4j
+    expose:
+      - "7474"  # HTTP
+      - "7687"  # Bolt
+    environment:
+      - NEO4J_AUTH=neo4j/samadhan123
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_dbms_memory_pagecache_size=1G
+      - NEO4J_dbms_memory_heap_initial__size=1G
+      - NEO4J_dbms_memory_heap_max__size=2G
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+    networks:
+      - samadhan-network
+
+volumes:
+  postgres-data:
+  redis-data:
+  qdrant-data:
+  mlflow-data:
+  backend-data:
+  neo4j-data:
+  neo4j-logs:
+
+networks:
+  samadhan-network:
+    driver: bridge
