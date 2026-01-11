@@ -19,10 +19,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className="dark">
-      <body className={inter.className}>
+    <html lang="en" className="dark" suppressHydrationWarning>
+      <body className={`${inter.className} bg-white dark:bg-background transition-colors duration-200`}>
         <Providers>
-          <div className="flex h-screen overflow-hidden bg-background">
+          <div className="flex h-screen overflow-hidden bg-white dark:bg-background">
             {/* Sidebar */}
             <Sidebar />
 
@@ -32,7 +32,7 @@ export default function RootLayout({
               <Header />
 
               {/* Page Content */}
-              <main className="flex-1 overflow-y-auto custom-scrollbar">
+              <main className="flex-1 overflow-y-auto custom-scrollbar bg-gray-50 dark:bg-background">
                 {children}
               </main>
             </div>

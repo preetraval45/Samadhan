@@ -21,7 +21,7 @@ const config: Config = {
           dark: '#0a0e27',
           'dark-secondary': '#1a1f3a',
         },
-        // UI colors
+        // Dark mode UI colors
         background: {
           DEFAULT: '#0a0e27',
           secondary: '#1a1f3a',
@@ -31,6 +31,20 @@ const config: Config = {
           primary: '#ffffff',
           secondary: '#a0aec0',
           accent: '#00d4ff',
+        },
+        // Light mode UI colors
+        light: {
+          background: {
+            DEFAULT: '#ffffff',
+            secondary: '#f8fafc',
+            tertiary: '#f1f5f9',
+          },
+          text: {
+            primary: '#0f172a',
+            secondary: '#64748b',
+            accent: '#0099ff',
+          },
+          border: '#e2e8f0',
         }
       },
       backgroundImage: {

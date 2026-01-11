@@ -245,14 +245,14 @@ export function ChatInterface() {
   }
 
   return (
-    <div className="flex-1 flex flex-col h-full">
+    <div className="flex-1 flex flex-col h-full bg-white dark:bg-background">
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-6">
+      <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-6 bg-gray-50 dark:bg-background">
         <div className="max-w-4xl mx-auto space-y-6">
           {messages.length === 0 && (
             <div className="text-center py-12">
-              <FileText className="w-16 h-16 text-text-secondary mx-auto mb-4 opacity-50" />
-              <p className="text-text-secondary">
+              <FileText className="w-16 h-16 text-gray-400 dark:text-text-secondary mx-auto mb-4 opacity-50" />
+              <p className="text-gray-600 dark:text-text-secondary">
                 Start a conversation by typing your question below
               </p>
             </div>
@@ -264,9 +264,9 @@ export function ChatInterface() {
 
           {(sendMessageMutation.isPending || isStreaming) && messages[messages.length - 1]?.role === 'user' && (
             <div className="flex justify-start">
-              <div className="flex items-center gap-2 px-4 py-3 bg-background-secondary rounded-lg">
+              <div className="flex items-center gap-2 px-4 py-3 bg-gray-100 dark:bg-background-secondary rounded-lg">
                 <Loader2 className="w-4 h-4 animate-spin text-brand-cyan" />
-                <span className="text-sm text-text-secondary">
+                <span className="text-sm text-gray-600 dark:text-text-secondary">
                   {isStreaming ? 'Streaming response...' : 'Thinking...'}
                 </span>
               </div>
@@ -278,7 +278,7 @@ export function ChatInterface() {
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-white/10 bg-background-secondary/50 backdrop-blur-lg p-4">
+      <div className="border-t border-gray-200 dark:border-white/10 bg-white dark:bg-background-secondary/50 backdrop-blur-lg p-4">
         <form onSubmit={handleSubmit} className="max-w-4xl mx-auto">
           {/* File Upload Preview */}
           {uploadedFiles.length > 0 && (
@@ -286,14 +286,14 @@ export function ChatInterface() {
               {uploadedFiles.map((file, index) => (
                 <div
                   key={index}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-background-secondary border border-white/10 rounded-lg text-sm"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-background-secondary border border-gray-200 dark:border-white/10 rounded-lg text-sm"
                 >
                   <FileText className="w-4 h-4 text-brand-cyan" />
-                  <span className="text-text-primary">{file.name}</span>
+                  <span className="text-gray-900 dark:text-text-primary">{file.name}</span>
                   <button
                     type="button"
                     onClick={() => removeFile(index)}
-                    className="text-text-secondary hover:text-red-400 transition-colors"
+                    className="text-gray-600 dark:text-text-secondary hover:text-red-400 transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -315,10 +315,10 @@ export function ChatInterface() {
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="p-3 bg-background-secondary border border-white/10 rounded-lg hover:border-brand-cyan transition-all duration-200"
+              className="p-3 bg-gray-50 dark:bg-background-secondary border border-gray-200 dark:border-white/10 rounded-lg hover:border-brand-cyan transition-all duration-200"
               title="Attach files"
             >
-              <Paperclip className="w-5 h-5 text-text-secondary" />
+              <Paperclip className="w-5 h-5 text-gray-600 dark:text-text-secondary" />
             </button>
 
             <textarea
@@ -331,7 +331,7 @@ export function ChatInterface() {
                 }
               }}
               placeholder="Ask anything... (Shift + Enter for new line)"
-              className="flex-1 min-h-[52px] max-h-32 px-4 py-3 bg-background-secondary border border-white/10 rounded-lg text-text-primary placeholder:text-text-secondary focus:outline-none focus:border-brand-cyan focus:ring-2 focus:ring-brand-cyan/20 transition-all duration-200 resize-none"
+              className="flex-1 min-h-[52px] max-h-32 px-4 py-3 bg-gray-50 dark:bg-background-secondary border border-gray-200 dark:border-white/10 rounded-lg text-gray-900 dark:text-text-primary placeholder:text-gray-500 dark:placeholder:text-text-secondary focus:outline-none focus:border-brand-cyan focus:ring-2 focus:ring-brand-cyan/20 transition-all duration-200 resize-none"
               rows={1}
             />
             <button
