@@ -22,8 +22,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: samadhan-backend
-    expose:
-      - "8000"
+    ports:
+      - "401:8000"
     environment:
       - ENVIRONMENT=development
       - DATABASE_URL=postgresql://samadhan:samadhan123@postgres:5432/samadhan
@@ -51,8 +51,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: samadhan-frontend
-    expose:
-      - "3000"
+    ports:
+      - "402:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:400/api
     volumes:
@@ -72,8 +72,8 @@ services:
       - POSTGRES_USER=samadhan
       - POSTGRES_PASSWORD=samadhan123
       - POSTGRES_DB=samadhan
-    expose:
-      - "5432"
+    ports:
+      - "403:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
@@ -83,8 +83,8 @@ services:
   redis:
     image: redis:7-alpine
     container_name: samadhan-redis
-    expose:
-      - "6379"
+    ports:
+      - "404:6379"
     volumes:
       - redis-data:/data
     networks:
@@ -94,9 +94,9 @@ services:
   qdrant:
     image: qdrant/qdrant:latest
     container_name: samadhan-qdrant
-    expose:
-      - "6333"
-      - "6334"
+    ports:
+      - "405:6333"
+      - "406:6334"
     volumes:
       - qdrant-data:/qdrant/storage
     networks:
@@ -106,8 +106,8 @@ services:
   mlflow:
     image: ghcr.io/mlflow/mlflow:v2.10.2
     container_name: samadhan-mlflow
-    expose:
-      - "5000"
+    ports:
+      - "407:5000"
     environment:
       - MLFLOW_BACKEND_STORE_URI=sqlite:///mlflow/mlflow.db
       - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
@@ -121,9 +121,9 @@ services:
   neo4j:
     image: neo4j:5.16-community
     container_name: samadhan-neo4j
-    expose:
-      - "7474"  # HTTP
-      - "7687"  # Bolt
+    ports:
+      - "408:7474"  # HTTP
+      - "409:7687"  # Bolt
     environment:
       - NEO4J_AUTH=neo4j/samadhan123
       - NEO4J_PLUGINS=["apoc"]

@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from loguru import logger
 
-from api.routes import chat, health, models, documents
+from api.routes import chat, health, models, documents, tools
 from core.config import settings
 from core.logging import setup_logging
 
@@ -75,6 +75,7 @@ app.include_router(health.router, prefix="/api/v1", tags=["Health"])
 app.include_router(chat.router, prefix="/api/v1", tags=["Chat"])
 app.include_router(models.router, prefix="/api/v1", tags=["Models"])
 app.include_router(documents.router, prefix="/api/v1", tags=["Documents"])
+app.include_router(tools.router, prefix="/api/v1", tags=["Tools"])
 
 
 # Global exception handler

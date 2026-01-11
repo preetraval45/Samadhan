@@ -3,7 +3,7 @@ LLM Engine
 Multi-provider LLM client with unified interface
 """
 
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, AsyncGenerator
 from enum import Enum
 import openai
 from anthropic import Anthropic
@@ -232,3 +232,115 @@ class LLMEngine:
             ])
 
         return models
+
+    async def generate_stream(
+        self,
+        prompt: str,
+        model: str = "gpt-4",
+        temperature: float = 0.7,
+        max_tokens: int = 2048,
+        system_prompt: Optional[str] = None,
+        **kwargs
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        """
+        Generate streaming response from LLM
+
+        Args:
+            prompt: User prompt
+            model: Model identifier
+            temperature: Sampling temperature
+            max_tokens: Maximum response length
+            system_prompt: Optional system prompt
+            **kwargs: Additional provider-specific parameters
+
+        Yields:
+            Token chunks with metadata
+        """
+        provider = self._get_provider_for_model(model)
+
+        if provider == LLMProvider.OPENAI:
+            async for chunk in self._generate_openai_stream(
+                prompt, model, temperature, max_tokens, system_prompt, **kwargs
+            ):
+                yield chunk
+        elif provider == LLMProvider.ANTHROPIC:
+            async for chunk in self._generate_anthropic_stream(
+                prompt, model, temperature, max_tokens, system_prompt, **kwargs
+            ):
+                yield chunk
+        else:
+            raise ValueError(f"Unsupported model: {model}")
+
+    async def _generate_openai_stream(
+        self,
+        prompt: str,
+        model: str,
+        temperature: float,
+        max_tokens: int,
+        system_prompt: Optional[str],
+        **kwargs
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        """Generate streaming response using OpenAI"""
+        try:
+            client = self.providers[LLMProvider.OPENAI]
+
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": prompt})
+
+            stream = client.chat.completions.create(
+                model=model,
+                messages=messages,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                stream=True,
+                **kwargs
+            )
+
+            for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    yield {
+                        "content": chunk.choices[0].delta.content,
+                        "model": model,
+                        "provider": "openai",
+                        "finish_reason": chunk.choices[0].finish_reason
+                    }
+
+        except Exception as e:
+            logger.error(f"OpenAI streaming error: {e}")
+            raise
+
+    async def _generate_anthropic_stream(
+        self,
+        prompt: str,
+        model: str,
+        temperature: float,
+        max_tokens: int,
+        system_prompt: Optional[str],
+        **kwargs
+    ) -> AsyncGenerator[Dict[str, Any], None]:
+        """Generate streaming response using Anthropic Claude"""
+        try:
+            client = self.providers[LLMProvider.ANTHROPIC]
+
+            with client.messages.stream(
+                model=model,
+                max_tokens=max_tokens,
+                temperature=temperature,
+                system=system_prompt or "",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            ) as stream:
+                for text in stream.text_stream:
+                    yield {
+                        "content": text,
+                        "model": model,
+                        "provider": "anthropic",
+                        "finish_reason": None
+                    }
+
+        except Exception as e:
+            logger.error(f"Anthropic streaming error: {e}")
+            raise
