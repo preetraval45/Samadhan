@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 import uvicorn
 from loguru import logger
 
-from api.routes import chat, health, models, documents, tools, custom_ai, multimodal_custom, phase1_advanced
+from api.routes import chat, health, models, documents, tools, custom_ai, multimodal_custom, phase1_advanced, collaborative_chat
 from core.config import settings
 from core.logging import setup_logging
 
@@ -79,6 +79,7 @@ app.include_router(tools.router, prefix="/api/v1", tags=["Tools"])
 app.include_router(custom_ai.router, prefix="/api/v1/custom-ai", tags=["Custom AI"])
 app.include_router(multimodal_custom.router, prefix="/api/v1/multimodal", tags=["Multimodal AI"])
 app.include_router(phase1_advanced.router, prefix="/api/v1/phase1", tags=["Phase 1 Advanced"])
+app.include_router(collaborative_chat.router, prefix="/api/v1/collaborative", tags=["Collaborative Chat"])
 
 
 # Global exception handler

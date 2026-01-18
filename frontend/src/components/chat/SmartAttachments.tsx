@@ -10,9 +10,11 @@ import {
   X,
   Eye,
   Loader2,
+  Box,
 } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
+import { ThreeDModelViewer } from './ThreeDModelViewer'
 
 interface SmartAttachmentsProps {
   files: File[]
@@ -170,6 +172,9 @@ export function SmartAttachments({ files, onRemove }: SmartAttachmentsProps) {
     if (['csv', 'xlsx', 'xls'].includes(ext || '')) return 'spreadsheet'
     if (['doc', 'docx', 'txt', 'md'].includes(ext || '')) return 'document'
 
+    // 3D model formats
+    if (['gltf', 'glb', 'obj', 'fbx', 'stl', 'dae', 'ply'].includes(ext || '')) return '3d'
+
     return 'other'
   }
 
@@ -181,6 +186,8 @@ export function SmartAttachments({ files, onRemove }: SmartAttachmentsProps) {
         return Video
       case 'audio':
         return Music
+      case '3d':
+        return Box
       default:
         return FileText
     }
@@ -299,7 +306,7 @@ export function SmartAttachments({ files, onRemove }: SmartAttachmentsProps) {
               </div>
 
               <div className="flex items-center gap-1">
-                {(analysis?.preview || analysis?.text || analysis?.transcription) && (
+                {(analysis?.preview || analysis?.text || analysis?.transcription || analysis?.type === '3d') && (
                   <button
                     onClick={() =>
                       setExpandedFile(isExpanded ? null : fileKey)
@@ -371,6 +378,16 @@ export function SmartAttachments({ files, onRemove }: SmartAttachmentsProps) {
                 {analysis.metadata && (
                   <div className="text-xs text-gray-600 dark:text-text-secondary">
                     <pre>{JSON.stringify(analysis.metadata, null, 2)}</pre>
+                  </div>
+                )}
+
+                {/* 3D Model Viewer */}
+                {analysis.type === '3d' && (
+                  <div className="h-96 rounded-lg overflow-hidden">
+                    <ThreeDModelViewer
+                      modelUrl={URL.createObjectURL(file)}
+                      fileName={file.name}
+                    />
                   </div>
                 )}
               </div>
