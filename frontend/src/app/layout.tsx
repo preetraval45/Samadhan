@@ -15,9 +15,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: {
+}: Readonly<{
   children: React.ReactNode
-}) {
+}>) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body className={`${inter.className} bg-white dark:bg-background transition-colors duration-200`}>

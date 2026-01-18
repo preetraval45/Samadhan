@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(docker-compose up:*)",
-      "Bash(timeout 10 docker-compose:*)"
+      "Bash(timeout 10 docker-compose:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker logs:*)",
+      "Bash(docker-compose restart:*)"
     ]
   }
 }

@@ -26,7 +26,7 @@ class Message(BaseModel):
 class ChatRequest(BaseModel):
     message: str = Field(..., description="User message")
     conversation_id: Optional[str] = Field(None, description="Conversation ID for context")
-    model: Optional[str] = Field("gpt-4", description="LLM model to use")
+    model: Optional[str] = Field("microsoft/phi-2", description="LLM model to use (default: free local model)")
     temperature: Optional[float] = Field(0.7, ge=0, le=2)
     max_tokens: Optional[int] = Field(2048, ge=1, le=8192)
     use_rag: bool = Field(True, description="Enable RAG for context")
@@ -65,28 +65,37 @@ async def chat(request: ChatRequest):
     # Generate conversation ID if not provided
     conversation_id = request.conversation_id or str(uuid4())
 
-    # TODO: Implement RAG pipeline
-    # 1. Retrieve relevant context from vector database
-    # 2. Generate response using LLM with context
-    # 3. Track sources and confidence scores
+    # Generate response using LLM
+    system_prompt = """You are a friendly, helpful AI assistant with a warm personality. Engage in natural conversation like a human would:
 
-    # Placeholder response
-    response_text = f"This is a placeholder response to: {request.message}"
+- Be conversational and warm, not robotic or formal
+- Show empathy and understanding
+- Ask follow-up questions when appropriate
+- Share insights and explanations naturally
+- Use a friendly, approachable tone
+- Answer thoroughly and helpfully
+- Be knowledgeable across many topics
+- Admit when you're not sure about something
+
+Respond naturally to all questions and topics the user brings up, just like talking to a knowledgeable friend."""
+
+    llm_response = await llm_engine.generate(
+        prompt=request.message,
+        model=request.model,
+        temperature=request.temperature,
+        max_tokens=request.max_tokens,
+        system_prompt=system_prompt
+    )
+
+    # TODO: Implement RAG pipeline for retrieving context from vector database
 
     return ChatResponse(
         conversation_id=conversation_id,
-        message=response_text,
-        sources=[
-            {
-                "document": "sample_document.pdf",
-                "page": 1,
-                "relevance_score": 0.85,
-                "snippet": "Sample context snippet..."
-            }
-        ],
-        model_used=request.model,
-        tokens_used=150,
-        confidence=0.85,
+        message=llm_response['content'],
+        sources=[],  # Will be populated when RAG is integrated
+        model_used=llm_response['model'],
+        tokens_used=llm_response['tokens_used'],
+        confidence=1.0,
         timestamp=datetime.now(timezone.utc)
     )
 
@@ -133,50 +142,50 @@ async def chat_stream(request: ChatRequest):
             # Send start event with metadata
             yield f"data: {json.dumps({'type': 'start', 'conversation_id': conversation_id, 'model': request.model})}\n\n"
 
-            # TODO: Integrate actual LLM streaming
-            # For now, simulate streaming response
-            response_text = f"This is a streaming response to your query: {request.message}. "
-            response_text += "The system is analyzing your request using RAG and will provide detailed insights with source citations. "
-            response_text += "This demonstrates real-time token streaming capabilities."
+            # Use actual LLM streaming
+            system_prompt = """You are a friendly, helpful AI assistant with a warm personality. Engage in natural conversation like a human would:
 
-            # Simulate token-by-token streaming
-            words = response_text.split()
-            for i, word in enumerate(words):
+- Be conversational and warm, not robotic or formal
+- Show empathy and understanding
+- Ask follow-up questions when appropriate
+- Share insights and explanations naturally
+- Use a friendly, approachable tone
+- Answer thoroughly and helpfully
+- Be knowledgeable across many topics
+- Admit when you're not sure about something
+
+Respond naturally to all questions and topics the user brings up, just like talking to a knowledgeable friend."""
+
+            token_count = 0
+            async for chunk in llm_engine.generate_stream(
+                prompt=request.message,
+                model=request.model,
+                temperature=request.temperature,
+                max_tokens=request.max_tokens,
+                system_prompt=system_prompt
+            ):
                 token_data = {
                     'type': 'token',
-                    'content': word + (' ' if i < len(words) - 1 else ''),
-                    'index': i
+                    'content': chunk['content'],
+                    'index': token_count
                 }
                 yield f"data: {json.dumps(token_data)}\n\n"
+                token_count += 1
 
-                # Simulate processing delay
-                await asyncio.sleep(0.05)
-
-            # Send sources after completion
-            sources_data = {
-                'type': 'sources',
-                'sources': [
-                    {
-                        "document": "sample_document.pdf",
-                        "page": 1,
-                        "relevance_score": 0.85,
-                        "snippet": "Sample context snippet from vector database..."
-                    },
-                    {
-                        "document": "knowledge_base.docx",
-                        "page": 3,
-                        "relevance_score": 0.78,
-                        "snippet": "Additional relevant information..."
-                    }
-                ]
-            }
-            yield f"data: {json.dumps(sources_data)}\n\n"
+            # TODO: Add RAG sources when vector database is integrated
+            # For now, send empty sources
+            if request.use_rag:
+                sources_data = {
+                    'type': 'sources',
+                    'sources': []
+                }
+                yield f"data: {json.dumps(sources_data)}\n\n"
 
             # Send done event with final metadata
             done_data = {
                 'type': 'done',
-                'tokens_used': len(words),
-                'confidence': 0.85,
+                'tokens_used': token_count,
+                'confidence': 1.0,
                 'timestamp': datetime.now(timezone.utc).isoformat()
             }
             yield f"data: {json.dumps(done_data)}\n\n"

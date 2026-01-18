@@ -6,30 +6,28 @@ import { usePathname } from 'next/navigation'
 import {
   MessageSquare,
   FileText,
-  Database,
-  Settings,
-  BarChart3,
-  Brain,
   Upload,
-  History,
   ChevronLeft,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Wand2,
+  Settings,
+  Bell,
+  User,
+  History
 } from 'lucide-react'
 import { clsx } from 'clsx'
 
 const navigation = [
   { name: 'Chat', href: '/', icon: MessageSquare },
-  { name: 'Documents', href: '/documents', icon: FileText },
-  { name: 'Knowledge Base', href: '/knowledge', icon: Database },
-  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-  { name: 'Models', href: '/models', icon: Brain },
+  { name: 'AI Studio', href: '/studio', icon: Wand2 },
   { name: 'History', href: '/history', icon: History },
-  { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Documents', href: '/documents', icon: FileText },
 ]
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
   const pathname = usePathname()
 
   return (
@@ -105,12 +103,15 @@ export function Sidebar() {
         </div>
       )}
 
-      {/* User Profile */}
-      <div className="p-4 border-t border-gray-200 dark:border-white/10">
-        <div className={clsx(
-          'flex items-center gap-3',
-          collapsed ? 'justify-center' : ''
-        )}>
+      {/* User Profile with Dropdown */}
+      <div className="p-4 border-t border-gray-200 dark:border-white/10 relative">
+        <button
+          onClick={() => setShowProfileMenu(!showProfileMenu)}
+          className={clsx(
+            'w-full flex items-center gap-3 hover:bg-gray-100 dark:hover:bg-background-tertiary rounded-lg p-2 transition-colors',
+            collapsed ? 'justify-center' : ''
+          )}
+        >
           <div className="w-10 h-10 bg-gradient-brand rounded-full flex items-center justify-center text-white font-bold">
             U
           </div>
@@ -124,7 +125,34 @@ export function Sidebar() {
               </p>
             </div>
           )}
-        </div>
+        </button>
+
+        {/* Dropdown Menu */}
+        {showProfileMenu && !collapsed && (
+          <div className="absolute bottom-full left-4 right-4 mb-2 bg-white dark:bg-background-secondary border border-gray-200 dark:border-white/10 rounded-lg shadow-lg overflow-hidden">
+            <Link
+              href="/profile"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-background-tertiary transition-colors text-gray-900 dark:text-text-primary"
+            >
+              <User className="w-4 h-4" />
+              <span className="text-sm">Profile</span>
+            </Link>
+            <Link
+              href="/notifications"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-background-tertiary transition-colors text-gray-900 dark:text-text-primary"
+            >
+              <Bell className="w-4 h-4" />
+              <span className="text-sm">Notifications</span>
+            </Link>
+            <Link
+              href="/settings"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-gray-100 dark:hover:bg-background-tertiary transition-colors text-gray-900 dark:text-text-primary"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="text-sm">Settings</span>
+            </Link>
+          </div>
+        )}
       </div>
     </aside>
   )
