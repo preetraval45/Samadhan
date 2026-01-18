@@ -5,7 +5,9 @@
       "Bash(timeout 10 docker-compose:*)",
       "Bash(docker ps:*)",
       "Bash(docker logs:*)",
-      "Bash(docker-compose restart:*)"
+      "Bash(docker-compose restart:*)",
+      "Bash(test:*)",
+      "Bash(nvidia-smi:*)"
     ]
   }
 }

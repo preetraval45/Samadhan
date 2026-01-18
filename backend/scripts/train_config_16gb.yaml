@@ -1,0 +1,91 @@
+# Training Configuration for 16GB GPU (RTX 5070 Ti)
+# Optimized for local training on single consumer GPU
+
+llm_training:
+  # Use small model only
+  model_size: small  # 7B parameters
+
+  # Memory optimizations
+  batch_size: 1
+  gradient_accumulation_steps: 16  # Effective batch size = 16
+  mixed_precision: fp16
+  gradient_checkpointing: true
+
+  # Training parameters
+  max_length: 2048  # Reduce from 8192 to save memory
+  epochs: 3
+  learning_rate: 2e-5
+
+  # Hardware
+  num_gpus: 1
+  device: cuda:0
+
+  # Checkpointing
+  save_steps: 500
+  checkpoint_dir: checkpoints/llm_small_16gb
+
+  # Dataset (manageable size)
+  dataset_size: "50GB"  # Start small
+  num_samples: 10000000  # 10M samples
+
+image_training:
+  model_type: base  # Start with base model
+
+  # Memory settings
+  batch_size: 2
+  image_size: 512  # Standard resolution
+  mixed_precision: fp16
+
+  # Training
+  epochs: 100
+  learning_rate: 1e-4
+
+  # Dataset
+  num_images: 100000  # 100K images to start
+  dataset_dir: training_data/images_small
+
+video_training:
+  # Not recommended for 16GB GPU
+  # Video training requires 24GB+ VRAM
+  enabled: false
+
+deepfake_training:
+  # Lightweight, can train
+  batch_size: 4
+  image_size: 256
+  mixed_precision: fp16
+  epochs: 50
+
+voice_cloning:
+  # Lightweight, can train
+  batch_size: 8
+  audio_length: 3  # seconds
+  mixed_precision: fp16
+  epochs: 100
+
+# Memory management
+memory_management:
+  empty_cache_frequency: 100  # Clear cache every 100 steps
+  pin_memory: true
+  num_workers: 4
+  prefetch_factor: 2
+
+# Monitoring
+monitoring:
+  tensorboard: true
+  log_frequency: 10
+  save_samples: true
+
+# Recommended training order
+training_order:
+  1: "Small LLM (7B) - 2-4 weeks"
+  2: "Base image model - 1-2 weeks"
+  3: "Voice cloning - 3-5 days"
+  4: "Deepfake base - 3-5 days"
+
+# What to skip on 16GB
+skip_on_16gb:
+  - "Medium/Large/Grok LLMs (need 32GB+)"
+  - "Video generation (need 24GB+)"
+  - "Super-resolution 16x (need 24GB+)"
+  - "4K/8K video (need 80GB+)"

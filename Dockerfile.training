@@ -1,0 +1,75 @@
+FROM nvidia/cuda:12.1.0-cudnn8-devel-ubuntu22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV CUDA_HOME=/usr/local/cuda
+
+# Training-specific optimizations
+ENV OMP_NUM_THREADS=8
+ENV MKL_NUM_THREADS=8
+
+WORKDIR /training
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3.11 \
+    python3.11-dev \
+    python3-pip \
+    git \
+    wget \
+    curl \
+    vim \
+    htop \
+    tmux \
+    screen \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    libglib2.0-0 \
+    build-essential \
+    cmake \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ln -s /usr/bin/python3.11 /usr/bin/python
+
+# Copy requirements
+COPY backend/requirements.txt \
+     backend/requirements-custom-ai.txt \
+     backend/requirements-multimodal.txt \
+     /training/
+
+# Install Python packages
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir \
+        torch==2.2.0 \
+        torchvision==0.17.0 \
+        torchaudio==2.2.0 \
+        --index-url https://download.pytorch.org/whl/cu121 && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir -r requirements-custom-ai.txt && \
+    pip install --no-cache-dir -r requirements-multimodal.txt
+
+# Install distributed training packages
+RUN pip install --no-cache-dir \
+    deepspeed \
+    accelerate \
+    wandb \
+    tensorboard \
+    ninja
+
+# Copy backend code
+COPY backend /training/backend
+
+# Create directories
+RUN mkdir -p /training/checkpoints \
+             /training/training_data \
+             /training/logs \
+             /training/cache
+
+ENV PYTHONPATH=/training/backend:$PYTHONPATH
+
+# Expose tensorboard port
+EXPOSE 6006
+
+CMD ["/bin/bash"]

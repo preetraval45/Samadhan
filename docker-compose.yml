@@ -32,11 +32,22 @@ services:
       - NEO4J_URI=bolt://neo4j:7687
       - NEO4J_USER=neo4j
       - NEO4J_PASSWORD=samadhan123
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - CUDA_VISIBLE_DEVICES=0
+      - PYTHONUNBUFFERED=1
     volumes:
       - ./backend:/app
       - backend-data:/app/data
+      - ./checkpoints:/app/checkpoints
+      - ./training_data:/app/training_data
+      - ./generated_outputs:/app/generated_outputs
+      - ./uploaded_faces:/app/uploaded_faces
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     depends_on:
       - postgres
       - redis
@@ -44,6 +55,7 @@ services:
       - neo4j
     networks:
       - samadhan-network
+    restart: unless-stopped
 
   # Frontend
   frontend:
@@ -136,6 +148,92 @@ services:
     networks:
       - samadhan-network
 
+  # Training Master Node (Optional - for model training)
+  training-master:
+    build:
+      context: .
+      dockerfile: Dockerfile.training
+    container_name: samadhan-training-master
+    hostname: training-master
+    ports:
+      - "410:6006"  # TensorBoard
+      - "411:29500"  # Distributed training port
+    volumes:
+      - ./backend:/training/backend
+      - ./checkpoints:/training/checkpoints
+      - ./training_data:/training/training_data
+      - ./logs:/training/logs
+      - training-cache:/training/cache
+    environment:
+      - MASTER_ADDR=training-master
+      - MASTER_PORT=29500
+      - WORLD_SIZE=1
+      - RANK=0
+      - CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+      - NCCL_DEBUG=INFO
+      - PYTHONUNBUFFERED=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - samadhan-network
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    profiles:
+      - training
+
+  # TensorBoard Service (Optional - for training visualization)
+  tensorboard:
+    image: tensorflow/tensorflow:latest
+    container_name: samadhan-tensorboard
+    ports:
+      - "412:6006"
+    volumes:
+      - ./logs:/logs
+    command: tensorboard --logdir=/logs --host=0.0.0.0 --port=6006
+    networks:
+      - samadhan-network
+    profiles:
+      - training
+
+  # Weights & Biases Local (Optional - for experiment tracking)
+  wandb-local:
+    image: wandb/local:latest
+    container_name: samadhan-wandb
+    ports:
+      - "413:8080"
+    volumes:
+      - wandb-data:/vol
+    environment:
+      - LICENSE=local
+    networks:
+      - samadhan-network
+    profiles:
+      - training
+
+  # MLflow Training (Optional - separate from production MLflow)
+  mlflow-training:
+    image: ghcr.io/mlflow/mlflow:v2.10.2
+    container_name: samadhan-mlflow-training
+    ports:
+      - "414:5000"
+    environment:
+      - MLFLOW_BACKEND_STORE_URI=sqlite:///mlflow/mlflow.db
+      - MLFLOW_DEFAULT_ARTIFACT_ROOT=/mlflow/artifacts
+    volumes:
+      - mlflow-training-data:/mlflow
+      - ./checkpoints:/mlflow/artifacts
+    command: mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow/mlflow.db --default-artifact-root /mlflow/artifacts
+    networks:
+      - samadhan-network
+    profiles:
+      - training
+
 volumes:
   postgres-data:
   redis-data:
@@ -144,6 +242,9 @@ volumes:
   backend-data:
   neo4j-data:
   neo4j-logs:
+  training-cache:
+  wandb-data:
+  mlflow-training-data:
 
 networks:
   samadhan-network:
